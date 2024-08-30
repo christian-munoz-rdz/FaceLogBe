@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Canvas con Imagen</title>
+  </head>
+  <body>
+    <div>
+      <canvas id="miCanvas" width="224" height="224"></canvas>
+      <button onclick="save()">save to back</button>
+      <button onclick="saveUserImage()">save user image</button>
+    </div>
+
+    <div>
+      <canvas id="fromWebCanvas" width="224" height="224"></canvas>
+      <button onclick="getFromBack()">get from back</button>
+    </div>
+
+    <div>
+      <canvas id="findCanvas" width="224" height="224"></canvas>
+      <button onclick="findUser()">Find user</button>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

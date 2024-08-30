@@ -1,0 +1,15 @@
+{
+  "cSpell.words": [
+    "deepface",
+    "dotenv",
+    "fastapi",
+    "sqlmodel",
+    "uvicorn"
+  ],
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true,
+  },
+  "editor.tabSize": 4,
+  "editor.insertSpaces": true,
+}

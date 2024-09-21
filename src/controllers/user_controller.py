@@ -10,6 +10,7 @@ from database.dao.photo_embedding_dao import PhotoEmbeddingDao
 from database.dao.user_code_dao import UserCodeDao
 from database.dao.user_dao import UserDao
 from database.dao.user_photo_dao import UserPhotoDao
+from enums.time_record_enum import TimeRecordActionEnum
 from enums.user_enum import UserImageEnum
 from models.errors.database_error import DatabaseException
 from models.requests.face_models import FaceImagePayloadModel
@@ -33,8 +34,9 @@ class UserController:
         try:
             user_db = UserDao.create_user(session, user)
             codes_db = UserCodeDao.create_bulk_user_codes(session, user_db, user.codes)
+            area_users_db = UserDao.create_area_users(session, user_db.id, [area.area_id for area in user.areas])
             session.commit()
-            return UserBuilder.build_user_response(user_db, codes_db)
+            return UserBuilder.build_user_response(user_db, codes_db, area_users_db)
         except DatabaseException as e:
             print(e)
             session.rollback()
@@ -53,13 +55,15 @@ class UserController:
             user_responses = []
             for user_db in users_db:
                 codes = []
+                areas = []
                 try:
                     codes = UserCodeDao.get_all_user_codes(session, user_db.id)
+                    areas = AreaDao.get_user_areas(session, user_db.id)
                 except DatabaseException as e:
                     if e.http_status_code == 204:
                         codes = []
                     raise e
-                user_responses.append(UserBuilder.build_user_response(user_db, codes))
+                user_responses.append(UserBuilder.build_user_response(user_db, codes, areas))
             session.commit()
             return user_responses
         except DatabaseException as e:
@@ -75,17 +79,19 @@ class UserController:
 
     @staticmethod
     def get_user_with_images(
-        session: Session, user_id: int
+            session: Session, user_id: int
     ) -> UserWithImageResponseModel:
         try:
             user_db = UserDao.get_user(session, user_id)
             user_photos = []
             user_codes = []
+            user_areas = []
             try:
                 user_photos = UserPhotoDao.get_user_photos(session, user_id)
             except DatabaseException as e:
                 if e.http_status_code == 204:
                     user_photos = []
+            except Exception as e:
                 raise e
 
             try:
@@ -93,10 +99,19 @@ class UserController:
             except DatabaseException as e:
                 if e.http_status_code == 204:
                     user_codes = []
+            except Exception as e:
+                raise e
+
+            try:
+                user_areas = AreaDao.get_user_areas(session, user_db.id)
+            except DatabaseException as e:
+                if e.http_status_code == 204:
+                    user_areas = []
+            except Exception as e:
                 raise e
 
             response = UserBuilder.build_user_with_image_response(
-                user_db, user_codes, user_photos
+                user_db, user_areas, user_codes, user_photos
             )
             session.commit()
             return response
@@ -111,7 +126,7 @@ class UserController:
 
     @staticmethod
     def create_images_for_user(
-        session: Session, user_id: int, body: UserImagePayloadModel
+            session: Session, user_id: int, body: UserImagePayloadModel
     ) -> UserWithImageResponseModel:
         try:
             if len(body.photos) == 0:
@@ -163,7 +178,7 @@ class UserController:
 
     @staticmethod
     def create_user_time_record(
-        session: Session, body: UserLogTimePayloadModel
+            session: Session, body: UserLogTimePayloadModel
     ) -> UserWithImageResponseModel:
         try:
             current_time = datetime.now()
@@ -174,18 +189,14 @@ class UserController:
             )
 
             time_record_db = TimeRecordService.create_time_record(
-                session, body.action, user_db, area_db, user_photo_db, current_time
+                session, TimeRecordActionEnum(body.action), user_db, area_db, user_photo_db, current_time
             )
-            user_codes_db = []
-            try:
-                user_codes_db = UserCodeDao.get_all_user_codes(session, user_db.id)
-            except DatabaseException as e:
-                if e.http_status_code == 204:
-                    user_codes_db = []
-                raise e
+
+            user_codes_db = UserCodeDao.get_all_user_codes(session, user_db.id)
+            areas_db = AreaDao.get_user_areas(session, user_db.id)
 
             response = UserBuilder.build_user_with_image_response(
-                user_db, user_codes_db, [user_photo_db]
+                user_db, areas_db, user_codes_db, [user_photo_db]
             )
 
             session.commit()

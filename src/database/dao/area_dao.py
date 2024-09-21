@@ -2,6 +2,7 @@ from typing import Optional, Sequence
 
 from sqlmodel import Session, select
 
+from database.models.area_users import AreaUserDb
 from database.models.areas import AreaDb
 from models.errors.database_error import DatabaseException
 from models.requests.area_models import AreaPayloadModel
@@ -47,6 +48,21 @@ class AreaDao:
             if area is None:
                 raise DatabaseException(http_status_code=204, error_message=f"Empty area list")
             return area
+        except DatabaseException as e:
+            raise e
+        except Exception as e:
+            raise DatabaseException(http_status_code=500, error_message=f"Database error: {str(e)}")
+
+    @staticmethod
+    def get_user_areas(session: Session, user_id: int) -> Sequence[AreaDb]:
+        try:
+            areas = (
+                session.exec(
+                    select(AreaDb).join(AreaUserDb).where(AreaUserDb.user_id == user_id)
+                )).all()
+            if areas is None:
+                raise DatabaseException(http_status_code=204, error_message=f"No areas found for user {user_id}")
+            return areas
         except DatabaseException as e:
             raise e
         except Exception as e:

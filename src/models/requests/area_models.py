@@ -13,7 +13,6 @@ class AreaPayloadModel(BaseModel):
     division: str
     image: Optional[List[List[int]]]
 
-
     model_config = {
         "json_schema_extra": {
             "example": {
@@ -44,7 +43,6 @@ class AreaResponseModel(BaseModel):
     department: str
     division: str
     image: Optional[List[List[int]]]
-
 
     model_config = {
         "json_schema_extra": {

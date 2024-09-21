@@ -7,4 +7,4 @@ class AreaUserDb(SQLModel, table=True):
     id: Optional[int] = Field(primary_key=True)
     area_id: Optional[int] = Field(foreign_key="areas.id")
     user_id: Optional[int] = Field(foreign_key="users.id")
-    user_type: str
+    user_type: str # TODO: Define enum for this field

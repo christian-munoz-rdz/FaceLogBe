@@ -5,8 +5,8 @@ from PIL import Image
 
 
 class ImageService:
-    MAX_HEIGHT_PIXELS = 224
-    MAX_WIDTH_PIXELS = 224
+    MAX_HEIGHT_PIXELS = 720
+    MAX_WIDTH_PIXELS = 720
     RGBA_CHANNELS = 4
     RGB_CHANNELS = 3
 

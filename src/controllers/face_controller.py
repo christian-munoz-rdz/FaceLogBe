@@ -42,7 +42,7 @@ class FaceController:
 
     @staticmethod
     def describe_face_for_testing(
-        session: Session, user_id: int
+            session: Session, user_id: int
     ) -> List[FaceDescriptorResponseModel]:
         try:
             user_images = UserPhotoDao.get_user_photos_for_analisys(session, user_id)

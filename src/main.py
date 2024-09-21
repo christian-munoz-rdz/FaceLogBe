@@ -1,7 +1,9 @@
-from dotenv import load_dotenv
-from server import Server
-import uvicorn
 import os
+
+import uvicorn
+from dotenv import load_dotenv
+
+from server import Server
 
 
 def app():

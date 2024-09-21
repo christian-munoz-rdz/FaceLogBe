@@ -7,6 +7,8 @@ from sqlmodel import Session
 from database.dao.photo_embedding_dao import PhotoEmbeddingDao
 from database.dao.user_dao import UserDao
 from database.models.users import UserDb
+from models.errors.custom_error_with_object import HandledException
+from models.errors.database_error import DatabaseException
 from models.requests.face_models import FaceImagePayloadModel
 from services.image_service import ImageService
 
@@ -14,8 +16,8 @@ from services.image_service import ImageService
 class FaceService:
     DETECTOR = "yunet"
     MODEL_NAME = "Facenet"
-    MAX_IMAGE_WIDTH = 224
-    MAX_IMAGE_HEIGHT = 224
+    MAX_IMAGE_WIDTH = 720
+    MAX_IMAGE_HEIGHT = 720
 
     @staticmethod
     def represent_face(img_bytes: ndarray) -> Dict[str, Any]:
@@ -52,14 +54,21 @@ class FaceService:
 
     @staticmethod
     def get_user_by_image(session: Session, image: FaceImagePayloadModel) -> UserDb:
+        ## TODO: Almacenar los embeding, no se estan guardando
         np_image = ImageService.convert_list_to_numpy_array(image.photo)
         representation = FaceService.represent_face(np_image)
 
-        user_representation_db = (
-            PhotoEmbeddingDao.get_distance_squared_from_photo_embeddings(
-                session, representation["embedding"]
+        try:
+            user_representation_db = (
+                PhotoEmbeddingDao.get_distance_squared_from_photo_embeddings(
+                    session, representation["embedding"]
+                )
             )
-        )
+        except DatabaseException as e:
+            if e.http_status_code == 204:
+                raise HandledException(error=e, details=representation)
+        except Exception as e:
+            raise e
 
         user_db = UserDao.get_user(session, user_representation_db.user_id)
         return user_db

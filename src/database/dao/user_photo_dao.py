@@ -13,7 +13,7 @@ class UserPhotoDao:
     @staticmethod
     def create_user_photo(session: Session, current_time: datetime, image: bytes, type: UserImageEnum, user_id: int):
         try:
-            user_photo_db = UserPhotoDb(user_id=user_id, photo=image, type=type, created_at=current_time)
+            user_photo_db = UserPhotoDb(user_id=user_id, photo=image, type=type.value, created_at=current_time)
             session.add(user_photo_db)
             session.flush([user_photo_db])
             return user_photo_db

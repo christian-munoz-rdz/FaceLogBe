@@ -1,9 +1,10 @@
 from datetime import datetime
-from typing import List, Sequence, Tuple
+from typing import List, Sequence, Tuple, Dict, Any, cast
 
 from fastapi import HTTPException
 from sqlmodel import Session
 
+from database.dao.photo_embedding_dao import PhotoEmbeddingDao
 from database.dao.user_dao import UserDao
 from database.dao.user_photo_dao import UserPhotoDao
 from database.models.areas import AreaDb
@@ -12,10 +13,11 @@ from database.models.user_photos import UserPhotoDb
 from database.models.users import UserDb
 from enums.role_enum import RoleEnum
 from enums.user_enum import UserImageEnum
+from models.errors.custom_error_with_object import HandledException
 from models.errors.database_error import DatabaseException
 from models.requests.face_models import FaceImagePayloadModel
 from models.requests.user_models import UserPayloadModel
-from models.types.user_types import UserPhotoType
+from models.types.user_types import UserPhotoType, UserCodeType
 from services.face_service import FaceService
 from services.image_service import ImageService
 
@@ -76,15 +78,27 @@ class UserService:
             user_photo_db = UserPhotoDao.create_user_photo(session, datetime.now(), photo, UserImageEnum.RECORD,
                                                            user_db.id)
             return user_db, user_photo_db
-        except DatabaseException as e:
+        except HandledException as e:
             # not user found, create a new one
+            face_embeddings = cast(Dict[str, Any], e.details)
             current_timestamp = datetime.isoformat(datetime.now())
             max_area_name_length = 255 - len("YYYY-MM-DD HH:MM:SS.mmmmmm")
             area_name = area_db.name if len(area_db.name) <= max_area_name_length else area_db.name[
                                                                                        :max_area_name_length]
             user_name = f'{area_name}-{current_timestamp}'
-            user_db = UserDao.create_user(session, UserPayloadModel(name=user_name, email=None, role_id=RoleEnum.NONE))
+            user_db = UserDao.create_user(session, name=user_name, email=f'{user_name}@notfound.com', role_id=RoleEnum.NONE)
+            user_areas_db = UserDao.create_area_users(session, user_db.id, [area_db.id])
             photo = ImageService.convert_to_binary(image.photo)
             user_photo_db = UserPhotoDao.create_user_photo(session, datetime.now(), photo, UserImageEnum.RECORD,
                                                            user_db.id)
+            photo_embeddings_db = []
+            for dimension, face_embedding in enumerate(face_embeddings['embedding']):
+                photo_embeddings_db.append(
+                    PhotoEmbeddingDb(
+                        user_photo_id=user_photo_db.id,
+                        dimension=dimension,
+                        value=face_embedding
+                    )
+                )
+            photo_embeddings_db = PhotoEmbeddingDao.save_bulk_photo_embeddings(session, photo_embeddings_db)
             return user_db, user_photo_db

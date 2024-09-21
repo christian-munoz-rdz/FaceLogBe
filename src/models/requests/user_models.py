@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from enums.role_enum import RoleEnum
 from enums.time_record_enum import TimeRecordActionEnum
+from models.types.area_types import AreaUserType, AreaType
 from models.types.user_types import UserCodeType, UserPhotoType
 
 
@@ -13,6 +14,7 @@ class UserPayloadModel(BaseModel):
     role_id: RoleEnum
     email: Optional[str]
     codes: List[UserCodeType]
+    areas: List[AreaUserType]
 
     model_config = {
         "json_schema_extra": {
@@ -24,6 +26,11 @@ class UserPayloadModel(BaseModel):
                     {
                         "code": "0000000000",
                         "category": "STUDENT"
+                    }
+                ],
+                "areas": [
+                    {
+                        "area_id": 1
                     }
                 ]
             }
@@ -67,6 +74,7 @@ class UserResponseModel(BaseModel):
     email: Union[str, None]
     created_at: datetime
     codes: List[UserCodeType]
+    areas: List[AreaType]
 
     model_config = {
         "json_schema_extra": {
@@ -82,6 +90,18 @@ class UserResponseModel(BaseModel):
                         "user_id": 1,
                         "code": "0000000000",
                         "category": "STUDENT"
+                    }
+                ],
+                "areas": [
+                    {
+                        "id": 1,
+                        "name": "iLabTDI",
+                        "description": "La mejor area de todas claro que si",
+                        "module": "N",
+                        "classroom": "001",
+                        "campus": "CUCEI",
+                        "department": "Ingenierias",
+                        "division": "DIVEC",
                     }
                 ]
             }
@@ -157,7 +177,7 @@ class UserLogTimeResponseModel(BaseModel):
 
 class UserLogTimePayloadModel(BaseModel):
     area_id: int
-    action: TimeRecordActionEnum
+    action: str
     photo: List[List[int]]
 
     model_config = {

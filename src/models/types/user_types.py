@@ -13,6 +13,7 @@ class UserCodeType(BaseModel):
     code: Optional[str]
     category: UserCodeCategoryEnum
 
+
 class UserPhotoType(BaseModel):
     id: Optional[int] = None
     user_id: Optional[int] = None
